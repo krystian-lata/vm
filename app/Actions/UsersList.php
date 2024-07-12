@@ -14,7 +14,7 @@ class UsersList implements GetsUsersList
     {
 //        If we were creating api we could use packages like Spatie Query Builder which makes it easier to filter and sort data
         $query = User::with(['purchases' => function ($query) {
-            $query->latest();
+            $query->latest()->limit(1);
         }]);
 
         if ($sort === 'birthdate') {
