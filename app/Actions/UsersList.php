@@ -20,15 +20,29 @@ class UsersList implements GetsUsersList
         if ($sort === 'birthdate') {
             $query->orderByRaw('MONTH(birth_date), DAY(birth_date)');
         }
-
+//Normally this would probably be in a separate class like i mentioned above - Spatie Query Builder supports it really well
         if ($filter === 'this_week_birthdays') {
             $startOfWeek = Carbon::now()->startOfWeek();
             $endOfWeek = Carbon::now()->endOfWeek();
 
-            $query->whereBetween(DB::raw('DATE_FORMAT(birth_date, "%m-%d")'), [
-                $startOfWeek->format('m-d'),
-                $endOfWeek->format('m-d')
-            ]);
+            if ($startOfWeek->year !== $endOfWeek->year) {
+                // Handle the case where the week spans two years
+                $query->where(function ($query) use ($startOfWeek, $endOfWeek) {
+                    $query->whereBetween(DB::raw('DATE_FORMAT(birth_date, "%m-%d")'), [
+                        $startOfWeek->format('m-d'),
+                        '12-31'
+                    ])->orWhereBetween(DB::raw('DATE_FORMAT(birth_date, "%m-%d")'), [
+                        '01-01',
+                        $endOfWeek->format('m-d')
+                    ]);
+                });
+            } else {
+                // Handle the case where the week is within the same year
+                $query->whereBetween(DB::raw('DATE_FORMAT(birth_date, "%m-%d")'), [
+                    $startOfWeek->format('m-d'),
+                    $endOfWeek->format('m-d')
+                ]);
+            }
         }
 
         $users = $query->get();

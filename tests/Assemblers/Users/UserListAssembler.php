@@ -26,7 +26,7 @@ class UserListAssembler
         for ($i = 0; $i < $count; $i++) {
             User::factory()
                 ->create([
-                    'birth_date' => now()->startOfWeek()->subDays(rand(7, 365))->subYears(rand(18, 60))
+                    'birth_date' => now()->startOfWeek()->subDays(rand(7, 13))->subYears(rand(18, 60))
                 ]);
         }
     }

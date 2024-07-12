@@ -3,6 +3,8 @@
 namespace Tests\Feature\Actions;
 
 use App\Actions\UsersList;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Assemblers\Users\UserAssembler;
 use Tests\Assemblers\Users\UserListAssembler;
@@ -70,5 +72,25 @@ class UsersListTest extends TestCase
         $users = $this->usersList->withLatestPurchase();
 
         $this->assertEquals('2021-01-03 12:00', $users->first()->latest_purchase_date);
+    }
+
+    public function test_it_lists_all_with_birthdays_this_week_across_year_boundary(): void
+    {
+        Carbon::setTestNow('2025-01-02'); // The week starts on 2024-12-30 and ends on 2025-01-05
+
+        // Create users with birth dates in the week, spanning the year boundary
+        User::factory()->create(['birth_date' => '1985-12-29']);
+        User::factory()->create(['birth_date' => '1985-12-30']);
+        User::factory()->create(['birth_date' => '1985-12-31']);
+        User::factory()->create(['birth_date' => '1999-01-01']);
+        User::factory()->create(['birth_date' => '2000-01-07']);
+
+        $users = $this->usersList->withLatestPurchase(filter: 'this_week_birthdays');
+
+        // Assert that only the users with birthdays this week are returned
+        $this->assertCount(3, $users);
+        $this->assertEquals('1985-12-30', $users[0]->birth_date);
+        $this->assertEquals('1985-12-31', $users[1]->birth_date);
+        $this->assertEquals('1999-01-01', $users[2]->birth_date);
     }
 }
